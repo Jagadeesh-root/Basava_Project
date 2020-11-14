@@ -1,0 +1,323 @@
+███████ ██  ██████  ███    ██  █████  ██           ██████  ██████  ██████  ███████ 
+██      ██ ██       ████   ██ ██   ██ ██          ██      ██    ██ ██   ██ ██      
+███████ ██ ██   ███ ██ ██  ██ ███████ ██          ██      ██    ██ ██   ██ █████   
+     ██ ██ ██    ██ ██  ██ ██ ██   ██ ██          ██      ██    ██ ██   ██ ██      
+███████ ██  ██████  ██   ████ ██   ██ ███████      ██████  ██████  ██████  ███████ 
+                                                                                   
+--------------------------------------------------------------***************************----------------------------------------------------------
+
+#include <RH_ASK.h>
+
+#include <SPI.h> 
+ RH_ASK rf_driver;
+ 
+#define SENSOR A2 
+#include <LiquidCrystal.h> 
+LiquidCrystal LCD(12,10,9,2,3,4,5); 
+
+void setup() {
+  rf_driver.init();
+  Serial.begin(9600);
+  pinMode(SENSOR, INPUT_PULLUP);
+  pinMode(LED_BUILTIN,OUTPUT);
+  LCD.begin(16,2); 
+  LCD.setCursor(0,0);
+  LCD.print("~Signal Status~");
+  pinMode(6,INPUT_PULLUP);
+  
+}
+
+void loop() {
+  uint8_t buf[60];
+  uint8_t buflen = sizeof(buf);
+  int L =analogRead(SENSOR); 
+  
+  if(L<800){
+     Serial.println("=Signal Clear=");
+     LCD.setCursor(0,1);
+     LCD.print("                ");
+     LCD.setCursor(0,1);   
+     LCD.print("==Signal Clear==");
+     delay(500);
+     }
+  else{
+
+    if(digitalRead(6) == LOW){
+     Serial.println("==Signal Voilated==");
+     Serial.println();
+     LCD.setCursor(0,1); 
+     LCD.print("                ");
+     LCD.setCursor(0,1); 
+     LCD.print("=Signal Jumped="); 
+     if (rf_driver.recv(buf, &buflen)){
+        Serial.print("Signal Voilated by : ");  
+        Serial.println((char*)buf);
+        Serial.print("Time = ");
+        Serial.print(__TIME__);
+        Serial.print(" || Date = ");
+        Serial.println(__DATE__);
+        Serial.println();
+        Serial.println();
+        Serial.println();
+    }
+    }
+    else{
+     Serial.println("==Signal Passed==");
+     Serial.println();
+     LCD.setCursor(0,1);  
+     LCD.print("                ");
+     LCD.setCursor(0,1);  
+     LCD.print("=Signal Passed=");
+     if (rf_driver.recv(buf, &buflen)){
+        Serial.print("Signal Passes by : ");  
+        Serial.println((char*)buf);
+        Serial.print("Time = ");
+        Serial.print(__TIME__);
+        Serial.print(" || Date = ");
+        Serial.println(__DATE__);
+        Serial.println();
+        Serial.println();
+        Serial.println();
+          
+    
+    }
+    }
+     delay(500);
+  }
+  
+}
+ 
+
+-------------------------------------------------------------*****************-----------------------------------
+
+██    ██ ███████ ██   ██ ██  ██████ ██      ███████      ██████  ██████  ██████  ███████ 
+██    ██ ██      ██   ██ ██ ██      ██      ██          ██      ██    ██ ██   ██ ██      
+██    ██ █████   ███████ ██ ██      ██      █████       ██      ██    ██ ██   ██ █████   
+ ██  ██  ██      ██   ██ ██ ██      ██      ██          ██      ██    ██ ██   ██ ██      
+  ████   ███████ ██   ██ ██  ██████ ███████ ███████      ██████  ██████  ██████  ███████ 
+                                                                                         
+                                                                                         
+
+-------------------------------------------------------------*****************------------------------------------
+
+
+
+
+#include <SPI.h> 
+#include <RH_ASK.h>
+RH_ASK rf_driver;
+#include <LiquidCrystal.h>
+LiquidCrystal LCD(11,10,9,2,3,4,5);  
+
+#define trigPin 13 
+#define echoPin 8 
+
+  unsigned int Pot_holes = 0;
+  unsigned int Humps = 0;
+void setup() {
+
+  
+
+  rf_driver.init();
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  LCD.begin(16,2); 
+  LCD.setCursor(0,0);
+  LCD.print("--ROAD SURVEY--");
+}
+
+void loop() {
+	const char *msg = "Vehichle_No : KA 51 MD 4535 || Document_No : 2020KA01RA3554";
+ 	rf_driver.send((uint8_t *)msg, strlen(msg));
+ 	rf_driver.waitPacketSent();
+	long duration, distance;
+	digitalWrite(trigPin, LOW);
+	delayMicroseconds(2);
+	digitalWrite(trigPin, HIGH);
+	delayMicroseconds(10);
+	digitalWrite(trigPin, LOW);
+	duration = pulseIn(echoPin, HIGH);
+	distance = (duration/2) / 29.1;
+	Serial.println(distance);
+	LCD.setCursor(0,1);  //Set cursor to first column of second row
+	LCD.print("                "); //Print blanks to clear the row
+	LCD.setCursor(0,1);   //Set Cursor again to first column of second row
+	LCD.print("Pots=");  //Print your units.
+	LCD.print(Pot_holes); //Print measured distanc
+	LCD.print(" Humps=");  //Print your units.	
+	LCD.print(Humps); //Print measured distance
+	//  Serial.print("Pot_Holes = ");
+	//  Serial.println(Pot_holes);
+	//  Serial.print("Humps = ");
+	//  Serial.println(Humps);
+	delay(250); //pause to let things settle
+
+	if(distance > 10){
+      		Pot_holes++;
+    		} 
+    	else if(distance < 6){
+     		Humps++;
+    		}
+
+  
+	}
+
+
+
+
+
+
+
+
+
+
+==================
+RF RECEIVE
+==================
+
+#include <SPI.h>  
+#include "RF24.h" 
+byte addresses[][6] = {"0"}; 
+
+
+RF24 myRadio (7, 8); 
+
+
+
+
+struct package
+{
+  char RC_Num[11] = "NN";
+  char EM_Num[11] = "EE";
+  char IN_Num[11] = "II";
+
+};
+struct package2
+{
+  char Fit_Cert[11] = "FF";
+  int HUMPS = 0;
+  int POT_HOLES = 0;
+
+};
+
+
+typedef struct package Package;
+Package data;
+typedef struct package2 Package2;
+Package2 data2;
+
+
+
+void setup() 
+{
+  Serial.begin(115200);
+  delay(1000);
+
+  myRadio.begin(); 
+  myRadio.setChannel(115); 
+  myRadio.setPALevel(RF24_PA_MAX);
+  myRadio.setDataRate( RF24_250KBPS ) ; 
+  myRadio.openReadingPipe(1, addresses[0]);
+  myRadio.startListening();
+}
+
+
+void loop()  
+{
+    myRadio.read( &data, sizeof(data) );
+    delay(100);
+    
+    myRadio.read( &data2, sizeof(data2) );
+    Serial.print("\n--Packet Received--\n");
+    Serial.println(data.RC_Num);
+    Serial.println(data.EM_Num);
+    Serial.println(data.IN_Num);
+    Serial.println(data2.Fit_Cert);
+    Serial.println(data2.HUMPS);
+    Serial.println(data2.POT_HOLES);
+    
+    
+  
+delay(500);
+}
+
+=================
+RF TRANSMIT
+=================
+
+#include <SPI.h> 
+ 
+#include "RF24.h"
+
+RF24 myRadio (7, 8);
+byte addresses[][6] = {"0"};
+
+struct package
+{
+  char RC_Num[11] = "KA01R8523";
+  char EM_Num[11] = "201903EEE";
+  char IN_Num[11] = "NN4343NNN";
+
+};
+struct package2
+{
+  char Fit_Cert[11] = "FIT0909";
+  int HUMPS = 0;
+  int POT_HOLES = 0;
+
+};
+
+
+typedef struct package Package;
+Package data;
+typedef struct package2 Package2;
+Package2 data2;
+
+
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(1000);
+  myRadio.begin();  
+  myRadio.setChannel(115); 
+  myRadio.setPALevel(RF24_PA_MAX);
+  myRadio.setDataRate( RF24_250KBPS ) ; 
+  myRadio.openWritingPipe( addresses[0]);
+  delay(1000);
+}
+
+void loop()
+{
+  myRadio.write(&data, sizeof(data));
+  delay(100);
+   
+
+  myRadio.write(&data2, sizeof(data2));
+  Serial.print("\n\n\n----Packet Sent---");
+   Serial.print("\nRC Num :    ");
+  Serial.print(data.RC_Num);
+
+   Serial.print("\nEM Num :    ");
+  Serial.print(data.EM_Num);
+
+   Serial.print("\nIN Num :    ");
+  Serial.print(data.IN_Num);
+
+   Serial.print("\nFit Cert :  ");
+  Serial.print(data2.Fit_Cert);
+
+   Serial.print("\nHUMPS :     ");
+  Serial.print(data2.HUMPS++);
+
+   Serial.print("\nPOT HOLES : ");
+  Serial.print(data2.POT_HOLES++);
+ 
+
+  delay(500);
+
+}
+==============
+
+==============
